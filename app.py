@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 29 16:23:52 2026
-
-@author: oklui
-"""
 
 # -*- coding: utf-8 -*-
 """
-Dynamic Speed Study PDF Generator (ArcGIS + Flask)
+
+@author: oklui
 """
 
 from flask import Flask, send_file, request
@@ -18,8 +14,8 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.units import inch
 from arcgis.features import FeatureLayer
 import io
-import datetime
 import requests
+from datetime import datetime
 app = Flask(__name__)
 
 # =========================
@@ -28,33 +24,73 @@ app = Flask(__name__)
 layer = FeatureLayer(
     "https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/1"
 )
+# =========================
+#VDOT Excel Call For Length And 
 # MAP IMAGE FUNCTION
 # =========================
 def get_map_image(geometry):
+    from PIL import Image as PILImage, ImageDraw
+    from io import BytesIO
+
     x = geometry["x"]
     y = geometry["y"]
 
-    delta = 200  # meters (because 3857 is meters)
-
+    delta = 400
+    width, height = 800, 600
     bbox = f"{x - delta},{y - delta},{x + delta},{y + delta}"
 
-    url = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/export"
+    base_url = "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export"
+    ref_url = "https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer/export"
 
-    response = requests.get(url, params={
+    params = {
         "bbox": bbox,
         "bboxSR": 3857,
         "imageSR": 3857,
-        "size": "800,600",
-        "format": "png",
+        "size": f"{width},{height}",
         "f": "image"
-    })
+    }
 
-    # DEBUG (VERY IMPORTANT)
-    if response.status_code != 200:
-        print("Map request failed:", response.text)
+    try:
+        # --- Base imagery ---
+        base_resp = requests.get(base_url, params={**params, "format": "jpg"})
+        base_img = PILImage.open(BytesIO(base_resp.content)).convert("RGBA")
+
+        # --- Labels overlay ---
+        ref_resp = requests.get(ref_url, params={
+            **params,
+            "format": "png32",
+            "transparent": "true"
+        })
+        ref_img = PILImage.open(BytesIO(ref_resp.content)).convert("RGBA")
+
+        # --- Combine ---
+        combined = PILImage.alpha_composite(base_img, ref_img)
+
+        # =========================
+        #  DRAW RED DOT AT CENTER
+        # =========================
+        draw = ImageDraw.Draw(combined)
+
+        cx = width // 2
+        cy = height // 2
+        r = 6  # radius of dot
+
+        draw.ellipse(
+            [(cx - r, cy - r), (cx + r, cy + r)],
+            fill=(255, 0, 0),
+            outline=(0, 0, 0)
+        )
+
+        # --- Save to buffer ---
+        output = BytesIO()
+        combined.save(output, format="PNG")
+        output.seek(0)
+
+        return output
+
+    except Exception as e:
+        print("Map generation failed:", e)
         return None
-
-    return io.BytesIO(response.content)
 # =========================
 # PDF FUNCTION
 # =========================
@@ -91,7 +127,9 @@ def create_pdf(data):
     document.append(Spacer(1, 12))
     pstyle = ParagraphStyle(name="Normal", fontSize=10)
     document.append(Paragraph(
-        f"At the request of residents living on {data['location']} {data['type']}, Prince William County Department of Transportation (PWC DOT) conducted a speed study on {data['location']} {data['type']}. The study took place from {data['start_date']} to {data['start_date']}, near {data['nearest_address']}. The posted speed limit for Pier Trail Drive is {data['posted_speed']} MPH. At the study location, {data['location']} {data['type']} is {data['length']} feet long and is approximately {data['width']} feet wide.", pstyle))
+        f"At the request of residents living on {data['location']} {data['type']}, Prince William County Department of Transportation (PWC DOT) conducted a speed\
+        study on {data['location']} {data['type']}. The study took place from {data['start_date']} to {data['start_date']}, near {data['nearest_address']}. \
+        The posted speed limit for {data['location']} {data['type']} is {data['posted_speed']} MPH. At the study location, {data['location']} {data['type']} is {data['length']} miles long and is approximately {data['width']} feet wide.", pstyle))
     document.append(Spacer(1, 12))
     # --- Paragraphs ---
     document.append(Paragraph(
@@ -111,12 +149,7 @@ def create_pdf(data):
     document.append(Paragraph(
         f"<b>Recommendation:</b> PWC {data['answer']} recommend installing traffic calming measures on {data['location']} {data['type']}. "
         "The speed study results have been forwarded to the Prince William County Police Department for enforcement.", pstyle))
-    document.append(Spacer(1, 10))
-
-    document.append(Paragraph(
-        f"<b>Recommendation:</b> PWC {data['answer']} recommend installing traffic calming measures.",
-        pstyle
-    ))
+   
     document.append(Spacer(1, 10))
     # --- Criteria bullets ---
     bullets = [
@@ -129,13 +162,21 @@ def create_pdf(data):
         "No more than four (4) traffic calming devices on emergency response routes"
     ]
     document.append(Paragraph("The following criteria shall be met for consideration of traffic calming measures", pstyle))
+    bullet_style = ParagraphStyle(
+    name="Bullet",
+    fontSize=10,
+    leftIndent=20,     # pushes entire bullet line right
+    bulletIndent=10,   # controls bullet position
+    spaceAfter=4
+)
+
     for b in bullets:
-        document.append(Paragraph(f"<bullet>&bull;</bullet> {b}", pstyle))
+        document.append(Paragraph(f"<bullet>&bull;</bullet> {b}", bullet_style))
     document.append(Spacer(1, 10))
 
     # --- Eligible streets ---
     eligible_text = (
-        "Eligible streets: Local residential streets with posted speed limits of 35 MPH can be considered for "
+        "<b>Eligible streets:</b> Local residential streets with posted speed limits of 35 MPH can be considered for "
         "traffic calming if they meet the traffic calming criteria. A local residential street provides direct access "
         "to abutting residences (driveways) and provides mobility within the neighborhood. Traffic on these streets is "
         "expected to be entering or exiting residences."
@@ -154,7 +195,7 @@ def create_pdf(data):
     if data.get("picture"):
         try:
             document.append(Image(data["picture"], 6 * inch, 4 * inch))
-            document.append(Paragraph("<b>Figure 1:</b> Map showing approximate location of speed study.", ParagraphStyle(name="Normal", fontSize=10, alignment=TA_CENTER)))
+            document.append(Paragraph(f"<b>Figure 1:</b> Map showing approximate location of speed study at marked point near {data['nearest_address']}.", ParagraphStyle(name="Normal", fontSize=9, alignment=TA_CENTER)))
         except:
             pass  # prevents crash if image fails
 
@@ -187,15 +228,15 @@ def home():
     geom = feature.geometry
     # =========================
     # FIELD MAPPING (FIX THIS BASED ON YOUR DATA)
-    # =========================
+# =========================
     data = {
-        "location": attrs.get("StreetName") or "Unknown",
-        "length": attrs.get("True_length"),
-        "width": attrs.get("Road_width"),
+        "location": (attrs.get("StreetName").title()),
+        "length": round(attrs.get("True_length")/5280,2),
+        "width": round(attrs.get("Road_width")),
         "route": str(attrs.get("VDOTRouteNumber") or ""),
-        "start_date": attrs.get("Date") or "N/A",
-        "end_date": attrs.get("Date") or "N/A",
-        "nearest_address": attrs.get("Location__exact_address_"),
+        "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
+        "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+        "nearest_address": (attrs.get("Location__exact_address_")).title(),
         "vdot_adt": "***insert vdot_adt here",
         "posted_speed": attrs.get("SpeedLimit") or 0,
         "pwc_adt": attrs.get("Cumulative_ADT"),
@@ -203,12 +244,13 @@ def home():
         "pwc_2_average": attrs.get("Average_1") or 0,
         "pwc_1_85th": attrs.get("F85th_percentile") or 0,
         "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
-        "direction_1": attrs.get("Lane") or "",
-        "direction_2": attrs.get("Lane_1") or "",
-        "type": attrs.get("StreetType"),
+        "direction_1": (attrs.get("Lane")).title() or "",
+        "direction_2": (attrs.get("Lane_1")).title() or "",
+        "type": (attrs.get("StreetType")).capitalize(),
         "picture": get_map_image(geom),  # replace with URL if you store images
         "answer":"1",
-        "answer2":"1"
+        "answer2":"1",
+        "layer_number" :attrs.get("layer_name")
         
     }
 
