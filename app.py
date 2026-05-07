@@ -256,29 +256,29 @@ def home():
             "answer":"1",
             "answer2":"1",
             }
-        if l_index==2:
-            data = {
-                "location": (attrs.get("StreetName").title()),
-                "length": round(attrs.get("True_length")/5280,2),
-                "width": round(attrs.get("Road_width")),
-                "route": str(attrs.get("VDOTRouteNumber") or ""),
-                "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
-                "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
-                "nearest_address": (attrs.get("Location__exact_address_")).title(),
-                "vdot_adt": "***insert vdot_adt here",
-                "posted_speed": attrs.get("SpeedLimit") or 0,
-                "pwc_adt": attrs.get("Vehicle_Vol_"),
-                "pwc_1_average": attrs.get("Average") or 0,
-                "pwc_2_average": attrs.get("Average_1") or 0,
-                "pwc_1_85th": attrs.get("F85th_percentile") or 0,
-                "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
-                "direction_1": (attrs.get("Lane")).title() or "",
-                "direction_2": (attrs.get("Lane_1")).title() or "",
-                "type": (attrs.get("StreetType")).capitalize(),
-                "picture": get_map_image(geom),
-                "answer":"1",
-                "answer2":"1",
-                }
+     if l_index==2:
+         data = {
+             "location": (attrs.get("StreetName").title()),
+             "length": round(attrs.get("True_length")/5280,2),
+             "width": round(attrs.get("Road_width")),
+             "route": str(attrs.get("VDOTRouteNumber") or ""),
+             "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
+             "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+             "nearest_address": (attrs.get("Location__exact_address_")).title(),
+             "vdot_adt": "***insert vdot_adt here",
+             "posted_speed": attrs.get("SpeedLimit") or 0,
+             "pwc_adt": attrs.get("Vehicle_Vol_"),
+             "pwc_1_average": attrs.get("Average") or 0,
+             "pwc_2_average": attrs.get("Average_1") or 0,
+             "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+             "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+             "direction_1": (attrs.get("Lane")).title() or "",
+             "direction_2": (attrs.get("Lane_1")).title() or "",
+             "type": (attrs.get("StreetType")).capitalize(),
+             "picture": get_map_image(geom),
+             "answer":"1",
+             "answer2":"1",
+             }
             #=========================
             #RADAR DETECTOR DICTIONARY
             #=========================
