@@ -17,13 +17,14 @@ import io
 import requests
 from datetime import datetime
 app = Flask(__name__)
-
 # =========================
 # ArcGIS Layer
 # =========================
-layer = FeatureLayer(
-    "https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/1"
-)
+layer = [FeatureLayer("https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/1"),
+         FeatureLayer("https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/2"),
+         FeatureLayer("https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/3"),
+         FeatureLayer("https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/4"),
+         FeatureLayer("https://services2.arcgis.com/0Q7l03Ls62VG0fy4/arcgis/rest/services/Map2_WFL1/FeatureServer/5")]
 # =========================
 #VDOT Excel Call For Length And 
 # MAP IMAGE FUNCTION
@@ -209,12 +210,12 @@ def create_pdf(data):
 @app.route("/")
 def home():
     objectid = request.args.get("id")
-
+    layer_name=request.args.get("layer_name")
+    l_index=int(layer_name)
     if not objectid:
         return "Missing id parameter", 400
-
-   # Query feature (WITH geometry!)
-    result = layer.query(
+   # Query feature
+    result = layer[l_index-1].query(
         where=f"OBJECTID = {objectid}",
         out_fields="*",
         return_geometry=True
@@ -227,33 +228,83 @@ def home():
     attrs = feature.attributes
     geom = feature.geometry
     # =========================
-    # FIELD MAPPING (FIX THIS BASED ON YOUR DATA)
-# =========================
-    data = {
-        "location": (attrs.get("StreetName").title()),
-        "length": round(attrs.get("True_length")/5280,2),
-        "width": round(attrs.get("Road_width")),
-        "route": str(attrs.get("VDOTRouteNumber") or ""),
-        "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
-        "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
-        "nearest_address": (attrs.get("Location__exact_address_")).title(),
-        "vdot_adt": "***insert vdot_adt here",
-        "posted_speed": attrs.get("SpeedLimit") or 0,
-        "pwc_adt": attrs.get("Cumulative_ADT"),
-        "pwc_1_average": attrs.get("Average") or 0,
-        "pwc_2_average": attrs.get("Average_1") or 0,
-        "pwc_1_85th": attrs.get("F85th_percentile") or 0,
-        "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
-        "direction_1": (attrs.get("Lane")).title() or "",
-        "direction_2": (attrs.get("Lane_1")).title() or "",
-        "type": (attrs.get("StreetType")).capitalize(),
-        "picture": get_map_image(geom),  # replace with URL if you store images
-        "answer":"1",
-        "answer2":"1",
-        "layer_number" :attrs.get("layer_name")
-        
-    }
-
+    # FIELD MAPPING
+    # =========================
+    #=========================
+    #LOOP DETECTOR DICTIONARY
+    #=========================
+    if l_index==1:
+        data = {
+            "location": (attrs.get("StreetName").title()),
+            "length": round(attrs.get("True_length")/5280,2) or "",
+            "width": round(attrs.get("Road_width")) or "",
+            "route": str(attrs.get("VDOTRouteNumber") or ""),
+            "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
+            "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+            "nearest_address": (attrs.get("Location__exact_address_")).title(),
+            "vdot_adt": "***insert vdot_adt here",
+            "posted_speed": attrs.get("SpeedLimit") or 0,
+            "pwc_adt": attrs.get("Cumulative_ADT"),
+            "pwc_1_average": attrs.get("Average") or 0,
+            "pwc_2_average": attrs.get("Average_1") or 0,
+            "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+            "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+            "direction_1": (attrs.get("Lane")).title() or "",
+            "direction_2": (attrs.get("Lane_1")).title() or "",
+            "type": (attrs.get("StreetType")).capitalize(),
+            "picture": get_map_image(geom),
+            "answer":"1",
+            "answer2":"1",
+            }
+        if l_index==2:
+            data = {
+                "location": (attrs.get("StreetName").title()),
+                "length": round(attrs.get("True_length")/5280,2),
+                "width": round(attrs.get("Road_width")),
+                "route": str(attrs.get("VDOTRouteNumber") or ""),
+                "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
+                "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+                "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                "vdot_adt": "***insert vdot_adt here",
+                "posted_speed": attrs.get("SpeedLimit") or 0,
+                "pwc_adt": attrs.get("Vehicle_Vol_"),
+                "pwc_1_average": attrs.get("Average") or 0,
+                "pwc_2_average": attrs.get("Average_1") or 0,
+                "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+                "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+                "direction_1": (attrs.get("Lane")).title() or "",
+                "direction_2": (attrs.get("Lane_1")).title() or "",
+                "type": (attrs.get("StreetType")).capitalize(),
+                "picture": get_map_image(geom),
+                "answer":"1",
+                "answer2":"1",
+                }
+            #=========================
+            #RADAR DETECTOR DICTIONARY
+            #=========================
+        if l_index==3:
+            data = {
+                "location": (attrs.get("StreetName").title()),
+                "length": round(attrs.get("True_length")/5280,2),
+                "width": round(attrs.get("Road_width")),
+                "route": str(attrs.get("VDOTRouteNumber") or ""),
+                "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
+                "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+                "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                "vdot_adt": "***insert vdot_adt here",
+                "posted_speed": attrs.get("SpeedLimit") or 0,
+                "pwc_adt": attrs.get("Vehicle_Vol_"),
+                "pwc_1_average": attrs.get("Average") or 0,
+                "pwc_2_average": attrs.get("Average_1") or 0,
+                "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+                "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+                "direction_1": (attrs.get("Lane")).title() or "",
+                "direction_2": (attrs.get("Lane_1")).title() or "",
+                "type": (attrs.get("StreetType")).capitalize(),
+                "picture": get_map_image(geom),
+                "answer":"1",
+                "answer2":"1",
+                }
     # =========================
     # LOGIC
     # =========================
