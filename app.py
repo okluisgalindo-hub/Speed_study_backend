@@ -282,29 +282,309 @@ def home():
             #=========================
             #RADAR DETECTOR DICTIONARY
             #=========================
-        if l_index==3:
+    if l_index==3 and (attrs.get("Direction")!=attrs.get("Direction_1")):
+        data = {
+            "location": (attrs.get("StreetName").title()),
+            "length": round(attrs.get("True_length")/5280,2),
+            "width": round(attrs.get("Road_width_12")),
+            "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+            "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+            "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+            "nearest_address": (attrs.get("Location__exact_address_")).title(),
+            "vdot_adt": "***insert vdot_adt here",
+            "posted_speed": attrs.get("SpeedLimit") or 0,
+            "pwc_adt": attrs.get("Vehicle_Vol_"),
+            "pwc_1_average": attrs.get("Average") or 0,
+            "pwc_2_average": attrs.get("Average_1") or 0,
+            "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+            "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+            "direction_1": (attrs.get("Direction")).title() or "",
+            "direction_2": (attrs.get("Direction_1")).title() or "",
+            "type": (attrs.get("streettype")).capitalize(),
+            "picture": get_map_image(geom),
+            "answer":"1",
+            "answer2":"1",
+            }
+        #===========================
+        #POSITIVE SEARCH PARAMETERS
+        #===========================
+    if l_index==3 and(attrs.get("Direction")==attrs.get("Direction_1")):
+        objectid_1=int(objectid)+1
+        result_1 = layer[l_index-1].query(
+            where=f"OBJECTID = {objectid_1}",
+            out_fields="*",
+            return_geometry=True
+        )
+
+        if not result.features:
+            return "Feature not found", 404
+
+        feature_1 = result_1.features[0]
+        attrs_1 = feature_1.attributes
+        
+        if attrs.get("Location__exact_address_")[:-2]==attrs_1.get("Location__exact_address_")[:-2]:
             data = {
                 "location": (attrs.get("StreetName").title()),
                 "length": round(attrs.get("True_length")/5280,2),
-                "width": round(attrs.get("Road_width")),
-                "route": str(attrs.get("VDOTRouteNumber") or ""),
-                "start_date": datetime.fromtimestamp(attrs.get("Date")/1000).strftime("%B %d, %Y"),
-                "end_date": datetime.fromtimestamp(attrs.get("Date")/1000+259200).strftime("%B %d, %Y") or "N/A",
+                "width": round(attrs.get("Road_width_12")),
+                "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
                 "nearest_address": (attrs.get("Location__exact_address_")).title(),
                 "vdot_adt": "***insert vdot_adt here",
                 "posted_speed": attrs.get("SpeedLimit") or 0,
-                "pwc_adt": attrs.get("Vehicle_Vol_"),
-                "pwc_1_average": attrs.get("Average") or 0,
-                "pwc_2_average": attrs.get("Average_1") or 0,
-                "pwc_1_85th": attrs.get("F85th_percentile") or 0,
-                "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
-                "direction_1": (attrs.get("Lane")).title() or "",
-                "direction_2": (attrs.get("Lane_1")).title() or "",
-                "type": (attrs.get("StreetType")).capitalize(),
+                "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_1.get("Vehicle_Vol_")),
+                "pwc_1_average": attrs.get("AVG__50_") or 0,
+                "pwc_2_average": attrs_1.get("AVG__50_") or 0,
+                "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                "pwc_2_85th": attrs_1.get("AVG__85_") or 0,
+                "direction_1": (attrs.get("Direction")).title() or "",
+                "direction_2": (attrs_1.get("Direction")).title() or "",
+                "type": (attrs.get("streettype")).capitalize(),
                 "picture": get_map_image(geom),
                 "answer":"1",
                 "answer2":"1",
                 }
+        else:
+            
+                objectid_2=int(objectid)-1
+                result_2 = layer[l_index-1].query(
+                    where=f"OBJECTID = {objectid_2}",
+                    out_fields="*",
+                    return_geometry=True
+                )
+
+                if not result.features:
+                    return "Feature not found", 404
+
+                feature_2 = result_2.features[0]
+                attrs_2 = feature_2.attributes
+                
+                if attrs.get("Location__exact_address_")[:-2]==attrs_2.get("Location__exact_address_")[:-2]:
+                    data = {
+                        "location": (attrs.get("StreetName").title()),
+                        "length": round(attrs.get("True_length")/5280,2),
+                        "width": round(attrs.get("Road_width_12")),
+                        "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                        "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                        "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+                        "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                        "vdot_adt": "***insert vdot_adt here",
+                        "posted_speed": attrs.get("SpeedLimit") or 0,
+                        "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_2.get("Vehicle_Vol_")),
+                        "pwc_1_average": attrs.get("AVG__50_") or 0,
+                        "pwc_2_average": attrs_2.get("AVG__50_") or 0,
+                        "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                        "pwc_2_85th": attrs_2.get("AVG__85_") or 0,
+                        "direction_1": (attrs.get("Direction")).title() or "",
+                        "direction_2": (attrs_2.get("Direction")).title() or "",
+                        "type": (attrs.get("streettype")).capitalize(),
+                        "picture": get_map_image(geom),
+                        "answer":"1",
+                        "answer2":"1",
+                        }
+    if l_index==4 and (attrs.get("Direction")!=attrs.get("Direction_1")):
+        data = {
+            "location": (attrs.get("StreetName").title()),
+            "length": round(attrs.get("True_length")/5280,2),
+            "width": round(attrs.get("Road_width_12")),
+            "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+            "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+            "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+            "nearest_address": (attrs.get("Location__exact_address_")).title(),
+            "vdot_adt": "***insert vdot_adt here",
+            "posted_speed": attrs.get("SpeedLimit") or 0,
+            "pwc_adt": attrs.get("Vehicle_Vol_"),
+            "pwc_1_average": attrs.get("Average") or 0,
+            "pwc_2_average": attrs.get("Average_1") or 0,
+            "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+            "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+            "direction_1": (attrs.get("Direction")).title() or "",
+            "direction_2": (attrs.get("Direction_1")).title() or "",
+            "type": (attrs.get("streettype")).capitalize(),
+            "picture": get_map_image(geom),
+            "answer":"1",
+            "answer2":"1",
+            }
+        #===========================
+        #POSITIVE SEARCH PARAMETERS
+        #===========================
+    if l_index==4 and(attrs.get("Direction")==attrs.get("Direction_1")):
+        objectid_1=int(objectid)+1
+        result_1 = layer[l_index-1].query(
+            where=f"OBJECTID = {objectid_1}",
+            out_fields="*",
+            return_geometry=True
+        )
+
+        if not result.features:
+            return "Feature not found", 404
+
+        feature_1 = result_1.features[0]
+        attrs_1 = feature_1.attributes
+        
+        if attrs.get("Location__exact_address_")[:-2]==attrs_1.get("Location__exact_address_")[:-2]:
+            data = {
+                "location": (attrs.get("StreetName").title()),
+                "length": round(attrs.get("True_length")/5280,2),
+                "width": round(attrs.get("Road_width_12")),
+                "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+                "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                "vdot_adt": "***insert vdot_adt here",
+                "posted_speed": attrs.get("SpeedLimit") or 0,
+                "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_1.get("Vehicle_Vol_")),
+                "pwc_1_average": attrs.get("AVG__50_") or 0,
+                "pwc_2_average": attrs_1.get("AVG__50_") or 0,
+                "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                "pwc_2_85th": attrs_1.get("AVG__85_") or 0,
+                "direction_1": (attrs.get("Direction")).title() or "",
+                "direction_2": (attrs_1.get("Direction")).title() or "",
+                "type": (attrs.get("streettype")).capitalize(),
+                "picture": get_map_image(geom),
+                "answer":"1",
+                "answer2":"1",
+                }
+        else:
+            
+                objectid_2=int(objectid)-1
+                result_2 = layer[l_index-1].query(
+                    where=f"OBJECTID = {objectid_2}",
+                    out_fields="*",
+                    return_geometry=True
+                )
+
+                if not result.features:
+                    return "Feature not found", 404
+
+                feature_2 = result_2.features[0]
+                attrs_2 = feature_2.attributes
+                
+                if attrs.get("Location__exact_address_")[:-2]==attrs_2.get("Location__exact_address_")[:-2]:
+                    data = {
+                        "location": (attrs.get("StreetName").title()),
+                        "length": round(attrs.get("True_length")/5280,2),
+                        "width": round(attrs.get("Road_width_12")),
+                        "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                        "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                        "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+                        "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                        "vdot_adt": "***insert vdot_adt here",
+                        "posted_speed": attrs.get("SpeedLimit") or 0,
+                        "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_2.get("Vehicle_Vol_")),
+                        "pwc_1_average": attrs.get("AVG__50_") or 0,
+                        "pwc_2_average": attrs_2.get("AVG__50_") or 0,
+                        "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                        "pwc_2_85th": attrs_2.get("AVG__85_") or 0,
+                        "direction_1": (attrs.get("Direction")).title() or "",
+                        "direction_2": (attrs_2.get("Direction")).title() or "",
+                        "type": (attrs.get("streettype")).capitalize(),
+                        "picture": get_map_image(geom),
+                        "answer":"1",
+                        "answer2":"1",
+                        }
+    if l_index==5 and (attrs.get("Direction")!=attrs.get("Direction_1")):
+        data = {
+            "location": (attrs.get("StreetName").title()),
+            "length": round(attrs.get("True_length")/5280,2),
+            "width": round(attrs.get("Road_width_12")),
+            "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+            "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+            "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+            "nearest_address": (attrs.get("Location__exact_address_")).title(),
+            "vdot_adt": "***insert vdot_adt here",
+            "posted_speed": attrs.get("SpeedLimit") or 0,
+            "pwc_adt": attrs.get("Vehicle_Vol_"),
+            "pwc_1_average": attrs.get("Average") or 0,
+            "pwc_2_average": attrs.get("Average_1") or 0,
+            "pwc_1_85th": attrs.get("F85th_percentile") or 0,
+            "pwc_2_85th": attrs.get("F85th_percentile_1") or 0,
+            "direction_1": (attrs.get("Direction")).title() or "",
+            "direction_2": (attrs.get("Direction_1")).title() or "",
+            "type": (attrs.get("streettype1")).capitalize() or "",
+            "picture": get_map_image(geom),
+            "answer":"1",
+            "answer2":"1",
+            }
+        #===========================
+        #POSITIVE SEARCH PARAMETERS
+        #===========================
+    if l_index==5 and(attrs.get("Direction")==attrs.get("Direction_1")):
+        objectid_1=int(objectid)+1
+        result_1 = layer[l_index-1].query(
+            where=f"OBJECTID = {objectid_1}",
+            out_fields="*",
+            return_geometry=True
+        )
+
+        if not result.features:
+            return "Feature not found", 404
+
+        feature_1 = result_1.features[0]
+        attrs_1 = feature_1.attributes
+        
+        if attrs.get("Location__exact_address_")[:-2]==attrs_1.get("Location__exact_address_")[:-2]:
+            data = {
+                "location": (attrs.get("StreetName").title()),
+                "length": round(attrs.get("True_length")/5280,2),
+                "width": round(attrs.get("Road_width_12")),
+                "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+                "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                "vdot_adt": "***insert vdot_adt here",
+                "posted_speed": attrs.get("SpeedLimit") or 0,
+                "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_1.get("Vehicle_Vol_")),
+                "pwc_1_average": attrs.get("AVG__50_") or 0,
+                "pwc_2_average": attrs_1.get("AVG__50_") or 0,
+                "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                "pwc_2_85th": attrs_1.get("AVG__85_") or 0,
+                "direction_1": (attrs.get("Direction")).title() or "",
+                "direction_2": (attrs_1.get("Direction")).title() or "",
+                "type": (attrs.get("streettype1")).capitalize(),
+                "picture": get_map_image(geom),
+                "answer":"1",
+                "answer2":"1",
+                }
+        else:
+            
+                objectid_2=int(objectid)-1
+                result_2 = layer[l_index-1].query(
+                    where=f"OBJECTID = {objectid_2}",
+                    out_fields="*",
+                    return_geometry=True
+                )
+
+                if not result.features:
+                    return "Feature not found", 404
+
+                feature_2 = result_2.features[0]
+                attrs_2 = feature_2.attributes
+                
+                if attrs.get("Location__exact_address_")[:-2]==attrs_2.get("Location__exact_address_")[:-2]:
+                    data = {
+                        "location": (attrs.get("StreetName").title()),
+                        "length": round(attrs.get("True_length")/5280,2),
+                        "width": round(attrs.get("Road_width_12")),
+                        "route": str(attrs.get("VDOTRouteNumber") or "Private"),
+                        "start_date": datetime.fromtimestamp(attrs.get("Date_Started")/1000).strftime("%B %d, %Y"),
+                        "end_date": datetime.fromtimestamp(attrs.get("Date_Finished")/1000).strftime("%B %d, %Y") or "N/A",
+                        "nearest_address": (attrs.get("Location__exact_address_")).title(),
+                        "vdot_adt": "***insert vdot_adt here",
+                        "posted_speed": attrs.get("SpeedLimit") or 0,
+                        "pwc_adt": int(attrs.get("Vehicle_Vol_"))+int(attrs_2.get("Vehicle_Vol_")),
+                        "pwc_1_average": attrs.get("AVG__50_") or 0,
+                        "pwc_2_average": attrs_2.get("AVG__50_") or 0,
+                        "pwc_1_85th": attrs.get("AVG__85_") or 0,
+                        "pwc_2_85th": attrs_2.get("AVG__85_") or 0,
+                        "direction_1": (attrs.get("Direction")).title() or "",
+                        "direction_2": (attrs_2.get("Direction")).title() or "",
+                        "type": (attrs.get("streettype1")).capitalize(),
+                        "picture": get_map_image(geom),
+                        "answer":"1",
+                        "answer2":"1",
+                        }           
     # =========================
     # LOGIC
     # =========================
